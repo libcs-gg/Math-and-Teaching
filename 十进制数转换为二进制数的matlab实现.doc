@@ -1,0 +1,175 @@
+十进制数转换为二进制数的matlab实现
+
+matlab提供了一个系统函数dec2bin,可以用来进行十进制数的二进制转换,不过功能有限!
+在matlab中键入 help dec2bin,如下:
+DEC2BIN Convert decimal integer to a binary string.
+
+Example
+dec2bin(23) returns '10111'
+可见,这个函数只能转换整数,对非整数就无能为力了.因此,自己编写了matlab小程序,顺便也贴出来,希望对需要的人能有所帮助!^_^
+
+1.小数转换为二进制数
+输入参数有2个,一个是输入的小数(小于1),一个是指定转换后的二进制位数!
+
+程序源码如下:
+y=dectobin(innum,N)
+%十进制小数转换为二进制数
+%输入参数为innum和N
+%innum为输入的十进制小数
+%N为指定转换后二进制的位数
+if (innum>1)|(N == 0)%判断输入的有效性
+disp('error!');
+return;
+end
+count=0;
+tempnum=innum;
+record=zeros(1,N);
+while(N)
+count=count+1;%长度小于N
+if(count>N)
+N=0;
+% return;
+end
+tempnum=tempnum*2;%小数转换为二进制,乘2取整
+if tempnum>1
+record(count)=1;
+tempnum=tempnum-1;
+elseif(tempnum==1)
+record(count)=1;
+N=0;%stop loop
+else
+record(count)=0;
+end
+end
+y=record;
+
+2.如果要转换整数,则直接调用matlab的dec2bin即可!
+
+3.对于大于1的非整数,可以利用将其分为整数部分和小数部分的方法来处理:
+利用matlab的floor函数可以对输入的数(设为innum)向下取整,然后利用innum-floor(innum)就可以得到小数部分,调用上面的函数就可以得到其二进制表达式!
+
+注意,这里有一个小问题,就是dec2bin函数的返回值是一个char array,所以,我们应该先将其转换为double array!可以利用double()进行强制类型转换,得到ASCII码值,减去48就可以得到double array类型的0,1序列!
+程序代码如下:
+[num,numint,numf]=dectobin1(innum,N)
+%十进制数转换为二进制数
+%输入为十进制数innum,以及小数部分的位数N
+%输出为三个参数num,numint,numf
+%num为输出的二进制形式
+%numint为整数部分的二进制表达式
+%numf为小数部分的二进制表达式
+sep=5;%整数和小数部分的分隔符
+if(mod(innum,1)==0)%判断输入是否为整数,mod为取余函数
+numint=dec2bin(innum);
+numint=double(numint)-48;
+numf=zeros(1,N);
+num=[numint,sep,numf];
+return
+end;
+%输入为非整数的情况
+nint=floor(innum);%整数部分
+nf=innum-nint;%小数部分
+res_nint=dec2bin(nint);
+res_nint=double(res_nint)-48;
+res_nf=dectobin(nf,N);
+numint=res_nint;
+numf=res_nf;
+num=[numint,sep,numf];
+其中的dectobin函数就是最上面的小数转二进制函数!
+
+4.负数的情况
+在这里,我们采用补码的方式,如果输入为正,则二进制表达式不变,如果为负,则按位取反并加1.因此,需要对上面的函数加上一个负数判断以及补码转换的功能.最终的表示结果可以采用1QN的格式.补码转换部分程序如下:
+[numo,numinto,numfo]=conv(numint,numf,flag)
+%二进制数的补码表示
+%输入参数为numint整数部分的二进制表达式,numf小数部分二进制表达式,flag负数标志
+%输出参数为numo输入的补码,numinto整数部分的补码,numfo小数部分的补码
+if (flag==0)
+numo=[0,numint,5,numf];%正数
+numinto=numint;
+numfo=numf;
+else%负数,整数和小数部分均进行按位取反并加一
+l1=length(numint);
+l2=length(numf);
+num=[numint,numf];
+l=l1+l2;
+for i=1:l
+if num(i)==1%按位取反
+num(i)=0;
+else
+num(i)=1;
+end
+end
+%取反后加一
+temp_l=l;
+while(temp_l~=0)
+if num(temp_l)==0%最低位为0
+num(temp_l)=1;
+temp_l=0;%结束循环
+else
+num(temp_l)=0;
+temp_l=temp_l-1;
+end
+end
+% l1=length(numint);
+% for i=1:l1
+%
+% if numint(i)==1%按位取反
+% numint(i)=0;
+% else
+% numint(i)=1;
+% end
+%
+% end
+%
+% l2=length(numf);
+% for i=1:l2
+%
+% if numf(i)==1%按位取反
+% numf(i)=0;
+% else
+% numf(i)=1;
+% end
+%
+% end
+%
+% %取反后加一
+% temp_l1=l1;
+% while(temp_l1~=0)
+% if numint(temp_l1)==0%最低位为0
+% numint(temp_l1)=1;
+% temp_l1=0;%结束循环
+% else
+% numint(temp_l1)=0;
+% temp_l1=temp_l1-1;
+% end
+% end
+%
+% %取反后加一
+% temp_l2=l2;
+% while(temp_l2~=0)
+% if numf(temp_l2)==0%最低位为0
+% numf(temp_l2)=1;
+% temp_l2=0;%结束循环
+% else
+% numf(temp_l2)=0;
+% temp_l2=temp_l2-1;
+% end
+numinto=num(1:l1);
+numfo=num(l1+1:l);
+% numinto=numint;
+% numfo=numf;
+numo=[1,numinto,5,numfo];
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
